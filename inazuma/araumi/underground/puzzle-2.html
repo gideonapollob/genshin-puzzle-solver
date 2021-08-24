@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<script type="text/javascript" src="puzzle-2.min.js"></script>
+	<style type="text/css">
+		* {
+			font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+			font-size: 16px;
+		}
+
+		#puzzle-2-form, #solution-list {
+			margin: 0 auto 6px;
+			max-width: 640px;
+		}
+
+		#puzzle-2-form, #solution-list > .solution {
+			box-sizing: border-box;
+			border: 1px solid grey;
+			padding: 6px;
+			border-radius: 3px;
+		}
+
+		#puzzle-2-form > * {
+			box-sizing: border-box;
+			min-width: 100%;
+			max-width: 100%;
+			padding: 6px;
+			margin: 0 0 6px;
+		}
+
+		#puzzle-2-form ul,
+		.solution ol {
+			padding: 0 0 0 24px;
+			margin: 0;
+		}
+
+		#puzzle-2-form .violet {
+			color: violet;
+		}
+
+		#solution-list > .solution {
+			border: 1px solid grey;
+			margin: 6px;
+			box-sizing: border-box;
+			min-width: 100%;
+			max-width: 100%;
+			padding: 6px;
+			margin: 0 0 6px;
+			text-align: left;
+		}
+
+		#solution-list > .solution span {
+			display: block;
+		}
+
+		#solution-list > .solution .subtitle {
+			font-size: 80%;
+		}
+
+		#puzzle-2-form > *:last-child,
+		#solution-list > *:last-child {
+			margin-bottom: 0;
+		}
+	</style>
+</head>
+<body>
+</body>
+	<form id="puzzle-2-form">
+		<p><strong>Puzzle:</strong> Araumi, Inazuma 2nd Underground Puzzle</p>
+		<p><strong>How to use:</strong> Refer to the following letter equivalent to determine the pattern. The letter corresponds to each tile of the cube from the lighted tile going to the right.</p>
+		<ul>
+			<li><span class="violet">A</span> refers to the lighted tile.</li>
+			<li>B refers to the tile right of the lighted tile.</li>
+			<li>C refers to the tile at the back of the lighted tile.</li>
+			<li>D refers to the tile at the left of the lighted tile.</li>
+		</ul>
+		<p>The default pattern of the cubes is <span class="violet">A</span>C<span class="violet">A</span>C<span class="violet">A</span> and the goal is to get <span class="violet">AAAAA</span>.</p>
+		<label>Current Pattern</label>
+		<input type="text" name="pattern" placeholder="Current pattern. Example: ACACA" value="ACACA">
+		<label>Target Pattern</label>
+		<input type="text" name="target" placeholder="Target pattern. Example: AAAAA" value="AAAAA">
+		<button type="submit">Get solution</button>
+	</form>
+	<div id="solution-list"></div>
+	<script type="text/javascript">
+		document.addEventListener("DOMContentLoaded", function() {
+			const form = document.getElementById("puzzle-2-form");
+			form.addEventListener("submit", function(e) {
+				e.preventDefault();
+
+				const patternInput = form.elements["pattern"];
+				let patternString = patternInput.value;
+
+				const targetInput = form.elements["target"];
+				let targetString = targetInput.value;
+
+				const solutions = solve(patternString, targetString);
+				const solutionList = document.getElementById("solution-list");
+				solutionList.innerHTML = "";
+
+				if(typeof solutions == "string") {
+					let solutionNode = document.createElement("div");
+					solutionNode.classList.add("solution");
+					solutionNode.textContent = solutions;
+					solutionList.append(solutionNode);
+					return;
+				}
+
+				for(let i in solutions) {
+					// Convert solution array into english instructions.
+					const toEnglish = function(solution) {
+						const msg = "Hit cube #",
+							msg1 = "Lastly, hit cube #",
+							ordinal = {
+								1: ".",
+								2: " twice.",
+								3: " three times."
+							};
+
+						let instructions = [];
+
+						for(let i = 0; i < solution.length; i++) {
+							let j = 1, c = false;
+
+							for(let k = i + 1; k < solution.length; k++) {
+									if(solution[i] == solution[k]) {
+									   j++;
+									} else {
+										instructions.push(msg + solution[i] + ordinal[j]);
+										i = k - 1;
+										c = true;
+										break;
+									}
+							}
+
+							if(c) {
+								continue;
+							}
+
+							instructions.push(msg1 + solution[i] + ordinal[j]);
+							i += j;
+						}
+
+						return instructions;
+					}
+
+					let enlishSolution = toEnglish(solutions[i]),
+						solutionNode = document.createElement("div"),
+						subtitle = document.createElement("span"),
+						ol = document.createElement("ol");
+
+					solutionNode.classList.add("solution");
+					subtitle.classList.add("subtitle");
+					subtitle.textContent = "Solution " + (parseInt(i) + 1);
+					solutionNode.append(subtitle);
+
+					for(let j in enlishSolution) {
+						let li = document.createElement("li");
+						li.textContent = enlishSolution[j];
+						ol.append(li);
+					}
+
+					solutionNode.append(ol);
+					solutionList.append(solutionNode);
+				}
+			});
+		});
+	</script>
+</html>
