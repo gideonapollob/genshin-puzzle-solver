@@ -1,42 +1,70 @@
-// Pass a pattern from Araumi, Inazuma 2nd underground puzzle in "AAAAA" format
-// and will return a list of number that represents which cubes to hit on what
-// specific order. Will always give the shortest solution possible.
-const solve = function(pattern, target) {
+// Pass a pattern from Inazuma and will return a list of number that
+// represents which cubes to hit on what specific order. Will always
+// give the shortest solution possible.
+const solve = function(pattern, target, possibleStatus, ruleList) {
+	const randomPattern = function(refPattern, patternLength, sampleCount) {
+		let patterns = [];
+
+		for(let i = 0; i < sampleCount; i++) {
+			let pattern = "";
+
+			for(let j = 0; j < patternLength; j++) {
+				pattern += refPattern[Math.floor((Math.random() *
+					refPattern.length))];
+			}
+
+			patterns.push(pattern)
+		}
+
+		return patterns;
+	};
+
+	const samplePatterns = randomPattern(possibleStatus, ruleList.length, 2);
+
 	// Common validations.
-	const msg = " must be a 5-character string using the characters " +
-			"A to D. Example: AABCA, BDCBB, etc.",
-		msg1 = " must only use the characters A to D. Example: " +
-			"AABCA, BDCBB, etc.";
+	const msg = " must be a " + ruleList.length + "-character string using " +
+			"the characters " + possibleStatus[0] + " to " +
+			possibleStatus[possibleStatus.length - 1] + ". Example: " +
+			samplePatterns.join(", ") + ", etc.",
+		msg1 = " must only use the characters " + possibleStatus[0] + " to " +
+			possibleStatus[possibleStatus.length - 1] + ". Example: " +
+			samplePatterns.join(", ") + ", etc.";
 	
 	if(typeof pattern != "string") {
 		return "[Current Pattern]" + msg;
 	}
 
-	if(pattern.length != 5) {
+	if(pattern.length != ruleList.length) {
 		return "[Current Pattern]" + msg;
 	}
 
-	let m;
-	const regex = /[^A-D]/;
 	pattern = pattern.toUpperCase();
-	
-	if((m = regex.exec(pattern)) !== null) {
-		return "[Current Pattern]" + msg1;
+
+	const matchingPattern = function(str, pattern) {
+		for(let i = 0; i < str.length; i++) {
+			if(pattern.indexOf(str[i]) == -1) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
-	// target
+	if(!matchingPattern(pattern, possibleStatus)) {
+		return "[Current Pattern]" + msg1;
+	}
 
 	if(typeof target != "string") {
 		return "[Target Pattern]" + msg;
 	}
 
-	if(target.length != 5) {
+	if(target.length != ruleList.length) {
 		return "[Target Pattern]" + msg;
 	}
 
 	target = target.toUpperCase();
 	
-	if((m = regex.exec(target)) !== null) {
+	if(!matchingPattern(target, possibleStatus)) {
 		return "[Target Pattern]" + msg1;
 	}
 
@@ -45,8 +73,13 @@ const solve = function(pattern, target) {
 	}
 
 	// Creates a list of permutations from a set of elements.
-	const permute = function(set) {
-		const length = set.length;
+	const permute = function(length) {
+		let set = [];
+
+		for(let i = 1; i <= length; i++) {
+			set.push(i);
+		}
+
 		let result = [set.slice()],
 			c = new Array(length).fill(0),
 			i = 1, k, p;
@@ -79,29 +112,9 @@ const solve = function(pattern, target) {
 	// Solutions container.
 	let solutions = [];
 
-	// Creates list of all permissible permutation patterns using the numbers 1
-	// to 5.
-	const tileOrderPermutations = permute([1, 2, 3, 4, 5]),
-		ruleList = [
-			// Both the first and the third cube will rotate to the left if you
-			// hit the first cube.
-			[0, 2],
-
-			// The first, second, and third cube will rotate to the left if you
-			// hit the second cube,
-			[0, 1, 2],
-
-			// The first, third, and fifth cube will rotate to the left if you
-			// hit the third cube,
-			[0, 2, 4],
-
-			// The third, fourth, and fifth cube will rotate to the left if you
-			// hit the fourth cube,
-			[2, 3, 4],
-
-			// Both the third and the fifth cube will rotate to the left if you
-			// hit the fifth cube.
-			[2, 4]];
+	// Creates list of all permissible permutation patterns using the length of
+	// [ruleList].
+	const tileOrderPermutations = permute(ruleList.length);
 
 	for(let i = 0; i < tileOrderPermutations.length; i++) {
 		// dictionary - keeps which pattern leads to which solution. The key is
@@ -116,15 +129,9 @@ const solve = function(pattern, target) {
 		// currentSolution - The solution pattern derived from the current
 		// tileOrder, which will be compared later to other solution pattern to
 		// find which is shorter.
-		let dictionary = {pattern: []},
+		let dictionary = {},
 			tileOrder = tileOrderPermutations[i],
 			currentSolution = [];
-
-		// The sides of the cube. A refers to the lighted tile. B refers to the 
-		// tile right of the lighted tile. C refers to the tile at the back of 
-		// the lighted tile. D refers to the tile at the left of the lighted
-		// tile.
-		const sides = "ABCD";
 
 		// Shifts the current pattern to the next possible solution that is not
 		// existing yet from the [dictionary]. For example, by hitting the
@@ -138,21 +145,32 @@ const solve = function(pattern, target) {
 				existingRecord = [];
 			}
 
-			// Gives the letter left of the current tile, for example if the
+			// Gives the character next to the current tile, for example if the
 			// current tile of the cube is 'A', then when rotated, the next tile
-			// is 'B'. If the current tle is 'D', then the next tile is 'A'.
+			// is 'B'. If the current tile is 'D', then the next tile is 'A'.
+			//
+			// For example, if the cube is a light switch with three light
+			// status, it the current value is '1' on light, the next value is
+			// '2' on light. If the light status is '3', the next value is back
+			// to '1'
 			const rotateLeft = function(letter) {
-				if(sides.indexOf(letter) == sides.length - 1) {
-					return sides[0];
+				if(possibleStatus.indexOf(letter) ==
+					possibleStatus.length - 1) {
+					return possibleStatus[0];
 				} else {
-					return sides[sides.indexOf(letter) + 1];
+					return possibleStatus[possibleStatus.indexOf(letter) + 1];
 				}
 			}
 
-			// Shifts the letter/s of the [pattern] based on the given [indexes]
-			// in respect to the [ruleList]. For example, using the pattern
-			// 'BCBCA' and the indexes [2, 3, 4] (the third to fifth cubes), the
-			// letters 'BCA' will be rotated, and will return 'BCCDB'.
+			// Shifts the character/s of the [pattern] based on the given
+			// [indexes] in respect to the [ruleList]. For example, using the
+			// pattern 'BCBCA' and the indexes [2, 3, 4] (the third to fifth
+			// cubes), the characters 'BCA' will be rotated, and will return
+			// 'BCCDB'.
+			//
+			// Another example, with a three-light switch '1231' and the indexes
+			// [2, 3] (the third and fourth switch), the characters '31' will be
+			// rotatated, and will return '1212'.
 			const rotate = function(pattern, indexes) {
 				for(let j in indexes) {
 					pattern = pattern.replaceAt(indexes[j],
@@ -215,13 +233,17 @@ const solve = function(pattern, target) {
 		// [1, 2, 2, 3, 5, 1, 3, 5, 1, 3, 5, 1, 3, 5, 1, 2, 2]
 		// => [1, 2, 2, 2, 2] removes the four consecutive [3, 5, 1]
 		// => [1] removes the four consecutive [2]
+		//
+		// The value four depennds on the possible of the cube. A rotating cube
+		// has 4 status: side A, B, C, D. A three-light switch has three status:
+		// 1 on light, 2 on light, 3 on light.
 		const simplifySolution = function(solution) {
-			for(let j = 0; j < solution.length - sides.length + 1; j++) {
+			for(let j = 0; j < solution.length - possibleStatus.length + 1; j++) {
 				let isRepeating = false;
 
-				for(let k = 1; k <= (solution.length / sides.length); k++) {
+				for(let k = 1; k <= (solution.length / possibleStatus.length); k++) {
 					for(let l = 0; l < k; l++) {
-						for(let m = 1; m < sides.length; m++) {
+						for(let m = 1; m < possibleStatus.length; m++) {
 							const i = j + (k * m) + l;
 							if(solution[j + l] == solution[i]) {
 								isRepeating = true;
@@ -237,7 +259,7 @@ const solve = function(pattern, target) {
 					}
 
 					if(isRepeating) {
-						solution.splice(j, sides.length * k);
+						solution.splice(j, possibleStatus.length * k);
 						j = -1;
 					}
 				}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<script type="text/javascript" src="../../solve.min.js"></script>
+	<script type="text/javascript" src="../../main.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="../../main.min.css">
+</head>
+<body>
+</body>
+	<form id="puzzle-form">
+		<p><strong>Puzzle:</strong> beach of Tatarasuna mine</p>
+		<p><strong>How to use:</strong> The number corresponds to the number of light turned on the tile.</p>
+		<p>The default pattern of the tiles is 21212 and the goal is to get 33333.</p>
+		<label>Current Pattern</label>
+		<input type="text" name="pattern" placeholder="Current pattern. Example: 21212" value="21212">
+		<label>Target Pattern</label>
+		<input type="text" name="target" placeholder="Target pattern. Example: 33333" value="33333">
+		<button type="submit">Get solution</button>
+	</form>
+	<div id="solution-list"></div>
+	<script type="text/javascript">
+		// [sides] The possible values of the tiles. 1 means 1 on light, 2 means 2 on
+		// lights and 3 means 3 on light.
+		const noun = "tile",
+			sides = "123",
+			ruleList = [
+				// Both the light of the first and the second tile will increment
+				// if you hit the first tile.
+				[0, 1],
+
+				// First to third tiles will increment if you hit the second tile.
+				[0, 1, 2],
+
+				// Second to fourth tiles will increment if you hit the third tile.
+				[1, 2, 3],
+
+				// Third to fifth tiles will increment if you hit the fourth tile.
+				[2, 3, 4],
+
+				// Both the light of the fourth and the fifth tile will increment
+				// if you hit the fifth tile.
+				[3, 4]];
+	</script>
+</html>
